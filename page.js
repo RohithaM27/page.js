@@ -33,6 +33,7 @@ export default function Home() {
   const [open, setOpen] = useState(false)
   const [itemName, setItemName] = useState('')
 
+  // Function to update the inventory from Firestore
   const updateInventory = async () => {
     const snapshot = query(collection(firestore, 'inventory'))
     const docs = await getDocs(snapshot)
@@ -47,6 +48,7 @@ export default function Home() {
     updateInventory()
   }, [])
 
+  // Function to add a new item or update quantity if it exists
   const addItem = async (item) => {
     const docRef = doc(collection(firestore, 'inventory'), item)
     const docSnap = await getDoc(docRef)
@@ -59,6 +61,7 @@ export default function Home() {
     await updateInventory()
   }
   
+  // Function to remove an item or decrease quantity if more than 1
   const removeItem = async (item) => {
     const docRef = doc(collection(firestore, 'inventory'), item)
     const docSnap = await getDoc(docRef)
@@ -72,6 +75,34 @@ export default function Home() {
     }
     await updateInventory()
   }
+
+  // Function to increase the quantity of an item
+  const increaseQuantity = async (item) => {
+    const docRef = doc(collection(firestore, 'inventory'), item)
+    const docSnap = await getDoc(docRef)
+    if (docSnap.exists()) {
+      const { quantity } = docSnap.data()
+      await setDoc(docRef, { quantity: quantity + 1 })
+    }
+    await updateInventory()
+  }
+
+  // Function to decrease the quantity of an item
+  const decreaseQuantity = async (item) => {
+    const docRef = doc(collection(firestore, 'inventory'), item)
+    const docSnap = await getDoc(docRef)
+    if (docSnap.exists()) {
+      const { quantity } = docSnap.data()
+      if (quantity > 1) {
+        await setDoc(docRef, { quantity: quantity - 1 })
+      } else {
+        await deleteDoc(docRef)
+      }
+    }
+    await updateInventory()
+  }
+
+  // Handlers for opening and closing the modal
   const handleOpen = () => setOpen(true)
   const handleClose = () => setOpen(false)
 
@@ -84,6 +115,12 @@ export default function Home() {
       flexDirection={'column'}
       alignItems={'center'}
       gap={2}
+      // Set background image
+      sx={{
+        backgroundImage: 'url(/pantry.jpg)', // Path to the background image
+        backgroundSize: 'cover', // Cover the entire area
+        backgroundRepeat: 'no-repeat', // Prevent repeating the image
+      }}
     >
       <Modal
         open={open}
@@ -104,6 +141,7 @@ export default function Home() {
               value={itemName}
               onChange={(e) => setItemName(e.target.value)}
             />
+            {/* Modified button color to medium sand */}
             <Button
               variant="outlined"
               onClick={() => {
@@ -111,28 +149,36 @@ export default function Home() {
                 setItemName('')
                 handleClose()
               }}
+              sx={{ bgcolor: '#d5bfa6', color: '#333' }} // Medium sand color
             >
               Add
             </Button>
           </Stack>
         </Box>
       </Modal>
-      <Button variant="contained" onClick={handleOpen}>
+      {/* Modified button color to medium sand */}
+      <Button 
+        variant="contained" 
+        onClick={handleOpen}
+        sx={{ bgcolor: '#d5bfa6', color: '#333' }} // Medium sand color
+      >
         Add New Item
       </Button>
       <Box border={'1px solid #333'}>
+        {/* Modified the box color to dark brown */}
         <Box
           width="800px"
           height="100px"
-          bgcolor={'#ADD8E6'}
+          bgcolor={'#4e342e'} // Dark brown
           display={'flex'}
           justifyContent={'center'}
           alignItems={'center'}
         >
-          <Typography variant={'h2'} color={'#333'} textAlign={'center'}>
+          <Typography variant={'h2'} color={'#fff'} textAlign={'center'}>
             Inventory Items
           </Typography>
         </Box>
+        {/* Modified the box color to light brown */}
         <Stack width="800px" height="300px" spacing={2} overflow={'auto'}>
           {inventory.map(({name, quantity}) => (
             <Box
@@ -142,7 +188,7 @@ export default function Home() {
               display={'flex'}
               justifyContent={'space-between'}
               alignItems={'center'}
-              bgcolor={'#f0f0f0'}
+              bgcolor={'#d7ccc8'} // Light brown
               paddingX={5}
             >
               <Typography variant={'h3'} color={'#333'} textAlign={'center'}>
@@ -151,9 +197,30 @@ export default function Home() {
               <Typography variant={'h3'} color={'#333'} textAlign={'center'}>
                 Quantity: {quantity}
               </Typography>
-              <Button variant="contained" onClick={() => removeItem(name)}>
-                Remove
-              </Button>
+              <Stack direction="row" spacing={1}>
+                {/* Modified button color to medium sand */}
+                <Button 
+                  variant="contained" 
+                  onClick={() => increaseQuantity(name)}
+                  sx={{ bgcolor: '#d5bfa6', color: '#333' }} // Medium sand color
+                >
+                  +
+                </Button>
+                <Button 
+                  variant="contained" 
+                  onClick={() => decreaseQuantity(name)}
+                  sx={{ bgcolor: '#d5bfa6', color: '#333' }} // Medium sand color
+                >
+                  -
+                </Button>
+                <Button 
+                  variant="contained" 
+                  onClick={() => removeItem(name)}
+                  sx={{ bgcolor: '#d5bfa6', color: '#333' }} // Medium sand color
+                >
+                  Remove
+                </Button>
+              </Stack>
             </Box>
           ))}
         </Stack>
